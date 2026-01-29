@@ -3,8 +3,38 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
        guardarAlumno();
     });
+    mostrarAlumnos();
 });
-
+function mostrarAlumnos(){
+    let $tblAlumnos = document.querySelector("#tblAlumnos tbody"),
+        n = localStorage.length,
+        filas = "";
+    $tblAlumnos.innerHTML = "";
+    for(let i=0; i<n; i++){
+        let key = localStorage.key(i),
+            data = JSON.parse(localStorage.getItem(key));
+        filas += `
+                <tr onclick='modificarAlumno(${JSON.stringify(data)})'>
+                    <td>${data.codigo}</td>
+                    <td>${data.nombre}</td>
+                    <td>${data.direccion}</td>
+                    <td>${data.email}</td>
+                    <td>${data.telefono}</td>
+                    <td>
+                        <button class="btn btn-danger">DEL</button>
+                    </td>
+                </tr>
+            `;
+    }
+    $tblAlumnos.innerHTML = filas;
+}
+function modificarAlumno(alumno){
+    txtCodigoAlumno.value = alumno.codigo;
+    txtnombreAlumno.value = alumno.nombre;
+    txtDireccionAlumno.value = alumno.direccion;
+    txtEmailAlumno.value = alumno.email;
+    txtTelefonoAlumno.value = alumno.telefono;
+}
 function guardarAlumno() {
     let datos = {
         id: getId(),
@@ -33,7 +63,8 @@ function limpiarFormulario(){
 function buscarAlumno(codigo=''){
     let n = localStorage.length;
     for(let i = 0; i < n; i++){
-        let datos = JSON.parse(localStorage.getItem(i));
+        let key = localStorage.key(i);
+        let datos = JSON.parse(localStorage.getItem(key));
         if(datos?.codigo && datos.codigo.trim().toUpperCase() == codigo.trim().toUpperCase()){
             return datos;
         }
