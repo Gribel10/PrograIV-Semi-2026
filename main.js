@@ -1,73 +1,138 @@
-document.addEventListener("DOMContentLoaded", () => {
-    frmAlumnos.addEventListener("submit", (e) => {
-        e.preventDefault();
-       guardarAlumno();
-    });
-    mostrarAlumnos();
-});
-function mostrarAlumnos(){
-    let $tblAlumnos = document.querySelector("#tblAlumnos tbody"),
-        n = localStorage.length,
-        filas = "";
-    $tblAlumnos.innerHTML = "";
-    for(let i=0; i<n; i++){
-        let key = localStorage.key(i),
-            data = JSON.parse(localStorage.getItem(key));
-        filas += `
-                <tr onclick='modificarAlumno(${JSON.stringify(data)})'>
-                    <td>${data.codigo}</td>
-                    <td>${data.nombre}</td>
-                    <td>${data.direccion}</td>
-                    <td>${data.email}</td>
-                    <td>${data.telefono}</td>
-                    <td>
-                        <button class="btn btn-danger">DEL</button>
-                    </td>
-                </tr>
-            `;
-    }
-    $tblAlumnos.innerHTML = filas;
-}
-function modificarAlumno(alumno){
-    txtCodigoAlumno.value = alumno.codigo;
-    txtnombreAlumno.value = alumno.nombre;
-    txtDireccionAlumno.value = alumno.direccion;
-    txtEmailAlumno.value = alumno.email;
-    txtTelefonoAlumno.value = alumno.telefono;
-}
-function guardarAlumno() {
-    let datos = {
-        id: getId(),
-        codigo: txtCodigoAlumno.value,
-        nombre: txtnombreAlumno.value,
-        direccion: txtDireccionAlumno.value,
-        email: txtEmailAlumno.value,
-        telefono: txtTelefonoAlumno.value
-    }, codigoDuplicado = buscarAlumno(datos.codigo);
-    if(codigoDuplicado){
-        alert("El codigo del alumno ya existe, "+ codigoDuplicado.nombre);
-        return; //Termina la ejecucion de la funcion
-    }
-    localStorage.setItem( datos.id, JSON.stringify(datos));
-    limpiarFormulario();
-}
+// Esperar a que Vue.js se cargue completamente
+window.addEventListener('DOMContentLoaded', function() {
+    const { createApp } = Vue;
 
-function getId(){
-    return localStorage.length + 1;
-}
+    createApp({
+        data() {
+            return {
+                alumno: {
+                    codigo: '',
+                    nombre: '',
+                    direccion: '',
+                    municipio: '',
+                    departamento: '',
+                    telefono: '',
+                    fechaNacimiento: '',
+                    sexo: ''
+                },
+                alumnos: [],
+                modoEdicion: false,
+                codigoOriginal: '',
+                busqueda: ''
+            }
+        },
+        computed: {
+            alumnosFiltrados() {
+                if (this.busqueda === '') {
+                    return this.alumnos;
+                }
+                
+                const busquedaLower = this.busqueda.toLowerCase().trim();
+                
+                return this.alumnos.filter(alumno => {
+                    return (
+                        alumno.codigo.toLowerCase().includes(busquedaLower) ||
+                        alumno.nombre.toLowerCase().includes(busquedaLower) ||
+                        alumno.municipio.toLowerCase().includes(busquedaLower) ||
+                        alumno.departamento.toLowerCase().includes(busquedaLower)
+                    );
+                });
+            }
+        },
+        mounted() {
+            this.cargarAlumnos();
+        },
+        methods: {
+            guardarAlumno() {
+                // Validar que no exista código duplicado (solo en modo nuevo)
+                if (!this.modoEdicion) {
+                    const existe = this.alumnos.find(a => 
+                        a.codigo.trim().toUpperCase() === this.alumno.codigo.trim().toUpperCase()
+                    );
+                    
+                    if (existe) {
+                        alert(`El código del alumno ya existe: ${existe.nombre}`);
+                        return;
+                    }
+                }
 
-function limpiarFormulario(){
-    frmAlumnos.reset();
-}
+                // Crear copia del alumno
+                const alumnoGuardar = { ...this.alumno };
 
-function buscarAlumno(codigo=''){
-    let n = localStorage.length;
-    for(let i = 0; i < n; i++){
-        let key = localStorage.key(i);
-        let datos = JSON.parse(localStorage.getItem(key));
-        if(datos?.codigo && datos.codigo.trim().toUpperCase() == codigo.trim().toUpperCase()){
-            return datos;
+                if (this.modoEdicion) {
+                    // Actualizar alumno existente
+                    const index = this.alumnos.findIndex(a => a.codigo === this.codigoOriginal);
+                    if (index !== -1) {
+                        this.alumnos[index] = alumnoGuardar;
+                    }
+                } else {
+                    // Agregar nuevo alumno
+                    this.alumnos.push(alumnoGuardar);
+                }
+
+                // Guardar en localStorage
+                this.guardarEnLocalStorage();
+
+                // Limpiar formulario
+                this.limpiarFormulario();
+
+                // Mostrar mensaje
+                alert(this.modoEdicion ? 'Alumno actualizado exitosamente' : 'Alumno guardado exitosamente');
+            },
+
+            modificarAlumno(alumno) {
+                this.alumno = { ...alumno };
+                this.codigoOriginal = alumno.codigo;
+                this.modoEdicion = true;
+                
+                // Scroll al formulario
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+
+            eliminarAlumno(codigo) {
+                const alumno = this.alumnos.find(a => a.codigo === codigo);
+                
+                if (confirm(`¿Está seguro de eliminar al alumno ${alumno.nombre}?`)) {
+                    this.alumnos = this.alumnos.filter(a => a.codigo !== codigo);
+                    this.guardarEnLocalStorage();
+                    alert('Alumno eliminado exitosamente');
+                }
+            },
+
+            limpiarFormulario() {
+                this.alumno = {
+                    codigo: '',
+                    nombre: '',
+                    direccion: '',
+                    municipio: '',
+                    departamento: '',
+                    telefono: '',
+                    fechaNacimiento: '',
+                    sexo: ''
+                };
+                this.modoEdicion = false;
+                this.codigoOriginal = '';
+            },
+
+            limpiarBusqueda() {
+                this.busqueda = '';
+            },
+
+            cargarAlumnos() {
+                const datosGuardados = localStorage.getItem('alumnos');
+                if (datosGuardados) {
+                    try {
+                        this.alumnos = JSON.parse(datosGuardados);
+                    } catch (error) {
+                        console.error('Error al cargar datos:', error);
+                        this.alumnos = [];
+                    }
+                }
+            },
+
+            guardarEnLocalStorage() {
+                localStorage.setItem('alumnos', JSON.stringify(this.alumnos));
+            }
         }
-    }
-    return null;
-}
+    }).mount('#app');
+});

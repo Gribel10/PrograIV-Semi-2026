@@ -3,87 +3,440 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+    <title>Registro de Alumnos - Vue.js</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+        }
+        .table-responsive {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        thead {
+            position: sticky;
+            top: 0;
+            background-color: #343a40;
+            color: white;
+            z-index: 10;
+        }
+        .highlight {
+            background-color: #fff3cd !important;
+        }
+        /* Separación de botones */
+        .btn-spacing {
+            margin: 0 5px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
+    <div id="app" class="container mt-4">
         <div class="row">
-            <div class="col-6">
-                <form id="frmAlumnos">
-                    <div class="card text-bg-dark mb-3" style="max-width: 36rem;">
+            <!-- FORMULARIO -->
+            <div class="col-md-6">
+                <form @submit.prevent="guardarAlumno">
+                    <div class="card text-bg-dark mb-3">
                         <div class="card-header">REGISTRO DE ALUMNOS</div>
                         <div class="card-body">
-                            <div class="row p-1">
-                                <div class="col-3">
-                                    CODIGO:
-                                </div>
-                                <div class="col-3">
-                                    <input placeholder="codigo" required id="txtCodigoAlumno" name="txtCodigoAlumno" type="text" class="form-control">
-                                </div>
-                            </div>
-                            <div class="row p-1">
-                                <div class="col-3">
-                                    NOMBRE:
-                                </div>
-                                <div class="col-6">
-                                    <input placeholder="nombre" required id="txtnombreAlumno" name="txtnombreAlumno" type="text" class="form-control">
-                                </div>
-                            </div>
-                            <div class="row p-1">
-                                <div class="col-3">
-                                    DIRECCION:
-                                </div>
-                                <div class="col-9">
-                                    <input placeholder="direccion" required id="txtDireccionAlumno" name="txtDireccionAlumno" type="text" class="form-control">
-                                </div>
-                            </div>
-                            <div class="row p-1">
-                                <div class="col-3">
-                                    EMAIL:
-                                </div>
-                                <div class="col-6">
-                                    <input placeholder="email" required id="txtEmailAlumno" name="txtEmailAlumno" type="text" class="form-control">
-                                </div>
-                            </div>
-                            <div class="row p-1">
-                                <div class="col-3">
-                                    TELEFONO:
-                                </div>
+                            <!-- CÓDIGO -->
+                            <div class="row p-1 mb-2">
                                 <div class="col-4">
-                                    <input placeholder="telefono" required id="txtTelefonoAlumno" name="txtTelefonoAlumno" type="text" class="form-control">
+                                    <label>CÓDIGO:</label>
+                                </div>
+                                <div class="col-8">
+                                    <input 
+                                        v-model="alumno.codigo" 
+                                        placeholder="código" 
+                                        required 
+                                        type="text" 
+                                        class="form-control"
+                                        :disabled="modoEdicion">
+                                </div>
+                            </div>
+
+                            <!-- NOMBRE -->
+                            <div class="row p-1 mb-2">
+                                <div class="col-4">
+                                    <label>NOMBRE:</label>
+                                </div>
+                                <div class="col-8">
+                                    <input 
+                                        v-model="alumno.nombre" 
+                                        placeholder="nombre completo" 
+                                        required 
+                                        type="text" 
+                                        class="form-control">
+                                </div>
+                            </div>
+
+                            <!-- DIRECCIÓN -->
+                            <div class="row p-1 mb-2">
+                                <div class="col-4">
+                                    <label>DIRECCIÓN:</label>
+                                </div>
+                                <div class="col-8">
+                                    <input 
+                                        v-model="alumno.direccion" 
+                                        placeholder="dirección" 
+                                        required 
+                                        type="text" 
+                                        class="form-control">
+                                </div>
+                            </div>
+
+                            <!-- MUNICIPIO -->
+                            <div class="row p-1 mb-2">
+                                <div class="col-4">
+                                    <label>MUNICIPIO:</label>
+                                </div>
+                                <div class="col-8">
+                                    <input 
+                                        v-model="alumno.municipio" 
+                                        placeholder="municipio" 
+                                        required 
+                                        type="text" 
+                                        class="form-control">
+                                </div>
+                            </div>
+
+                            <!-- DEPARTAMENTO -->
+                            <div class="row p-1 mb-2">
+                                <div class="col-4">
+                                    <label>DEPARTAMENTO:</label>
+                                </div>
+                                <div class="col-8">
+                                    <select 
+                                        v-model="alumno.departamento" 
+                                        required 
+                                        class="form-select">
+                                        <option value="">Seleccione...</option>
+                                        <option value="Ahuachapán">Ahuachapán</option>
+                                        <option value="Santa Ana">Santa Ana</option>
+                                        <option value="Sonsonate">Sonsonate</option>
+                                        <option value="Chalatenango">Chalatenango</option>
+                                        <option value="La Libertad">La Libertad</option>
+                                        <option value="San Salvador">San Salvador</option>
+                                        <option value="Cuscatlán">Cuscatlán</option>
+                                        <option value="La Paz">La Paz</option>
+                                        <option value="Cabañas">Cabañas</option>
+                                        <option value="San Vicente">San Vicente</option>
+                                        <option value="Usulután">Usulután</option>
+                                        <option value="San Miguel">San Miguel</option>
+                                        <option value="Morazán">Morazán</option>
+                                        <option value="La Unión">La Unión</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- TELÉFONO -->
+                            <div class="row p-1 mb-2">
+                                <div class="col-4">
+                                    <label>TELÉFONO:</label>
+                                </div>
+                                <div class="col-8">
+                                    <input 
+                                        v-model="alumno.telefono" 
+                                        placeholder="0000-0000" 
+                                        required 
+                                        type="tel" 
+                                        class="form-control">
+                                </div>
+                            </div>
+
+                            <!-- FECHA DE NACIMIENTO -->
+                            <div class="row p-1 mb-2">
+                                <div class="col-4">
+                                    <label>FECHA NAC.:</label>
+                                </div>
+                                <div class="col-8">
+                                    <input 
+                                        v-model="alumno.fechaNacimiento" 
+                                        required 
+                                        type="date" 
+                                        class="form-control">
+                                </div>
+                            </div>
+
+                            <!-- SEXO -->
+                            <div class="row p-1 mb-2">
+                                <div class="col-4">
+                                    <label>SEXO:</label>
+                                </div>
+                                <div class="col-8">
+                                    <div class="form-check form-check-inline">
+                                        <input 
+                                            v-model="alumno.sexo" 
+                                            class="form-check-input" 
+                                            type="radio" 
+                                            value="M" 
+                                            id="sexoM"
+                                            required>
+                                        <label class="form-check-label" for="sexoM">
+                                            Masculino
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input 
+                                            v-model="alumno.sexo" 
+                                            class="form-check-input" 
+                                            type="radio" 
+                                            value="F" 
+                                            id="sexoF"
+                                            required>
+                                        <label class="form-check-label" for="sexoF">
+                                            Femenino
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- BOTONES -->
                         <div class="card-footer">
                             <div class="row">
                                 <div class="col text-center">
-                                    <button type="submit" id="btnGuardarAlumno" class="btn btn-primary">GUARDAR</button>
-                                    <button type="reset" id="btnCancelarAlumno" class="btn btn-warning">NUEVO</button>
+                                    <button type="submit" class="btn btn-primary btn-spacing">
+                                        {{ modoEdicion ? 'ACTUALIZAR' : 'GUARDAR' }}
+                                    </button>
+                                    <button type="button" @click="limpiarFormulario" class="btn btn-warning btn-spacing">
+                                        NUEVO
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
-            <div class="col-6">
-                <table class="table table-striped table-hover" id="tblAlumnos">
-                    <thead>
-                        <tr>
-                            <th>CODIGO</th>
-                            <th>NOMBRE</th>
-                            <th>DIRECCION</th>
-                            <th>EMAIL</th>
-                            <th>TELEFONO</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+
+            <!-- TABLA DE ALUMNOS -->
+            <div class="col-md-6">
+                <!-- BUSCADOR -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="input-group">
+                            <span class="input-group-text">BUSCAR</span>
+                            <input 
+                                v-model="busqueda" 
+                                type="text" 
+                                class="form-control" 
+                                placeholder="Buscar por código, nombre, municipio o departamento...">
+                            <button 
+                                v-if="busqueda" 
+                                @click="limpiarBusqueda" 
+                                class="btn btn-outline-secondary" 
+                                type="button">
+                                 Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">Lista de Alumnos</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>CÓDIGO</th>
+                                        <th>NOMBRE</th>
+                                        <th>MUNICIPIO</th>
+                                        <th>DEPTO</th>
+                                        <th>TELÉFONO</th>
+                                        <th>ACCIONES</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-if="alumnosFiltrados.length === 0 && busqueda === ''">
+                                        <td colspan="6" class="text-center text-muted">
+                                            No hay alumnos registrados
+                                        </td>
+                                    </tr>
+                                    <tr v-if="alumnosFiltrados.length === 0 && busqueda !== ''">
+                                        <td colspan="6" class="text-center text-warning">
+                                            No se encontraron resultados para "{{ busqueda }}"
+                                        </td>
+                                    </tr>
+                                    <tr v-for="alumno in alumnosFiltrados" :key="alumno.codigo">
+                                        <td>{{ alumno.codigo }}</td>
+                                        <td>{{ alumno.nombre }}</td>
+                                        <td>{{ alumno.municipio }}</td>
+                                        <td>{{ alumno.departamento }}</td>
+                                        <td>{{ alumno.telefono }}</td>
+                                        <td>
+                                            <button 
+                                                @click="modificarAlumno(alumno)" 
+                                                class="btn btn-sm btn-info btn-spacing"
+                                                style="margin: 0 5px;"
+                                                title="Editar">
+                                                EDITAR
+                                            </button>
+                                            <button 
+                                                @click="eliminarAlumno(alumno.codigo)" 
+                                                class="btn btn-sm btn-danger btn-spacing"
+                                                style="margin: 0 5px;"
+                                                title="Eliminar">
+                                                ELIMINAR
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="main.js"></script>
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
+    
+    <!-- App Script -->
+    <script>
+        // Esperar a que Vue.js se cargue completamente
+        window.addEventListener('DOMContentLoaded', function() {
+            const { createApp } = Vue;
+
+            createApp({
+                data() {
+                    return {
+                        alumno: {
+                            codigo: '',
+                            nombre: '',
+                            direccion: '',
+                            municipio: '',
+                            departamento: '',
+                            telefono: '',
+                            fechaNacimiento: '',
+                            sexo: ''
+                        },
+                        alumnos: [],
+                        modoEdicion: false,
+                        codigoOriginal: '',
+                        busqueda: ''
+                    }
+                },
+                computed: {
+                    alumnosFiltrados() {
+                        if (this.busqueda === '') {
+                            return this.alumnos;
+                        }
+                        
+                        const busquedaLower = this.busqueda.toLowerCase().trim();
+                        
+                        return this.alumnos.filter(alumno => {
+                            return (
+                                alumno.codigo.toLowerCase().includes(busquedaLower) ||
+                                alumno.nombre.toLowerCase().includes(busquedaLower) ||
+                                alumno.municipio.toLowerCase().includes(busquedaLower) ||
+                                alumno.departamento.toLowerCase().includes(busquedaLower)
+                            );
+                        });
+                    }
+                },
+                mounted() {
+                    this.cargarAlumnos();
+                },
+                methods: {
+                    guardarAlumno() {
+                        // Validar que no exista código duplicado (solo en modo nuevo)
+                        if (!this.modoEdicion) {
+                            const existe = this.alumnos.find(a => 
+                                a.codigo.trim().toUpperCase() === this.alumno.codigo.trim().toUpperCase()
+                            );
+                            
+                            if (existe) {
+                                alert(`El código del alumno ya existe: ${existe.nombre}`);
+                                return;
+                            }
+                        }
+
+                        // Crear copia del alumno
+                        const alumnoGuardar = { ...this.alumno };
+
+                        if (this.modoEdicion) {
+                            // Actualizar alumno existente
+                            const index = this.alumnos.findIndex(a => a.codigo === this.codigoOriginal);
+                            if (index !== -1) {
+                                this.alumnos[index] = alumnoGuardar;
+                            }
+                        } else {
+                            // Agregar nuevo alumno
+                            this.alumnos.push(alumnoGuardar);
+                        }
+
+                        // Guardar en localStorage
+                        this.guardarEnLocalStorage();
+
+                        // Limpiar formulario
+                        this.limpiarFormulario();
+
+                        // Mostrar mensaje
+                        alert(this.modoEdicion ? 'Alumno actualizado exitosamente' : 'Alumno guardado exitosamente');
+                    },
+
+                    modificarAlumno(alumno) {
+                        this.alumno = { ...alumno };
+                        this.codigoOriginal = alumno.codigo;
+                        this.modoEdicion = true;
+                        
+                        // Scroll al formulario
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    },
+
+                    eliminarAlumno(codigo) {
+                        const alumno = this.alumnos.find(a => a.codigo === codigo);
+                        
+                        if (confirm(`¿Está seguro de eliminar al alumno ${alumno.nombre}?`)) {
+                            this.alumnos = this.alumnos.filter(a => a.codigo !== codigo);
+                            this.guardarEnLocalStorage();
+                            alert('Alumno eliminado exitosamente');
+                        }
+                    },
+
+                    limpiarFormulario() {
+                        this.alumno = {
+                            codigo: '',
+                            nombre: '',
+                            direccion: '',
+                            municipio: '',
+                            departamento: '',
+                            telefono: '',
+                            fechaNacimiento: '',
+                            sexo: ''
+                        };
+                        this.modoEdicion = false;
+                        this.codigoOriginal = '';
+                    },
+
+                    limpiarBusqueda() {
+                        this.busqueda = '';
+                    },
+
+                    cargarAlumnos() {
+                        const datosGuardados = localStorage.getItem('alumnos');
+                        if (datosGuardados) {
+                            try {
+                                this.alumnos = JSON.parse(datosGuardados);
+                            } catch (error) {
+                                console.error('Error al cargar datos:', error);
+                                this.alumnos = [];
+                            }
+                        }
+                    },
+
+                    guardarEnLocalStorage() {
+                        localStorage.setItem('alumnos', JSON.stringify(this.alumnos));
+                    }
+                }
+            }).mount('#app');
+        });
+    </script>
 </body>
 </html>
