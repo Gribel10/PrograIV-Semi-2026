@@ -1,138 +1,41 @@
-// Esperar a que Vue.js se cargue completamente
-window.addEventListener('DOMContentLoaded', function() {
-    const { createApp } = Vue;
+const { createApp } = Vue,
+    Dexie = window.Dexie,
+    db = new Dexie("db_academica");
 
-    createApp({
-        data() {
-            return {
-                alumno: {
-                    codigo: '',
-                    nombre: '',
-                    direccion: '',
-                    municipio: '',
-                    departamento: '',
-                    telefono: '',
-                    fechaNacimiento: '',
-                    sexo: ''
-                },
-                alumnos: [],
-                modoEdicion: false,
-                codigoOriginal: '',
-                busqueda: ''
-            }
-        },
-        computed: {
-            alumnosFiltrados() {
-                if (this.busqueda === '') {
-                    return this.alumnos;
-                }
-                
-                const busquedaLower = this.busqueda.toLowerCase().trim();
-                
-                return this.alumnos.filter(alumno => {
-                    return (
-                        alumno.codigo.toLowerCase().includes(busquedaLower) ||
-                        alumno.nombre.toLowerCase().includes(busquedaLower) ||
-                        alumno.municipio.toLowerCase().includes(busquedaLower) ||
-                        alumno.departamento.toLowerCase().includes(busquedaLower)
-                    );
-                });
-            }
-        },
-        mounted() {
-            this.cargarAlumnos();
-        },
-        methods: {
-            guardarAlumno() {
-                // Validar que no exista código duplicado (solo en modo nuevo)
-                if (!this.modoEdicion) {
-                    const existe = this.alumnos.find(a => 
-                        a.codigo.trim().toUpperCase() === this.alumno.codigo.trim().toUpperCase()
-                    );
-                    
-                    if (existe) {
-                        alert(`El código del alumno ya existe: ${existe.nombre}`);
-                        return;
-                    }
-                }
 
-                // Crear copia del alumno
-                const alumnoGuardar = { ...this.alumno };
-
-                if (this.modoEdicion) {
-                    // Actualizar alumno existente
-                    const index = this.alumnos.findIndex(a => a.codigo === this.codigoOriginal);
-                    if (index !== -1) {
-                        this.alumnos[index] = alumnoGuardar;
-                    }
-                } else {
-                    // Agregar nuevo alumno
-                    this.alumnos.push(alumnoGuardar);
-                }
-
-                // Guardar en localStorage
-                this.guardarEnLocalStorage();
-
-                // Limpiar formulario
-                this.limpiarFormulario();
-
-                // Mostrar mensaje
-                alert(this.modoEdicion ? 'Alumno actualizado exitosamente' : 'Alumno guardado exitosamente');
-            },
-
-            modificarAlumno(alumno) {
-                this.alumno = { ...alumno };
-                this.codigoOriginal = alumno.codigo;
-                this.modoEdicion = true;
-                
-                // Scroll al formulario
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            },
-
-            eliminarAlumno(codigo) {
-                const alumno = this.alumnos.find(a => a.codigo === codigo);
-                
-                if (confirm(`¿Está seguro de eliminar al alumno ${alumno.nombre}?`)) {
-                    this.alumnos = this.alumnos.filter(a => a.codigo !== codigo);
-                    this.guardarEnLocalStorage();
-                    alert('Alumno eliminado exitosamente');
-                }
-            },
-
-            limpiarFormulario() {
-                this.alumno = {
-                    codigo: '',
-                    nombre: '',
-                    direccion: '',
-                    municipio: '',
-                    departamento: '',
-                    telefono: '',
-                    fechaNacimiento: '',
-                    sexo: ''
-                };
-                this.modoEdicion = false;
-                this.codigoOriginal = '';
-            },
-
-            limpiarBusqueda() {
-                this.busqueda = '';
-            },
-
-            cargarAlumnos() {
-                const datosGuardados = localStorage.getItem('alumnos');
-                if (datosGuardados) {
-                    try {
-                        this.alumnos = JSON.parse(datosGuardados);
-                    } catch (error) {
-                        console.error('Error al cargar datos:', error);
-                        this.alumnos = [];
-                    }
-                }
-            },
-
-            guardarEnLocalStorage() {
-                localStorage.setItem('alumnos', JSON.stringify(this.alumnos));
+createApp({
+    components:{
+        alumnos,
+        busqueda_alumnos
+    },
+    data(){
+        return{
+            forms:{
+                alumnos:{mostrar:false},
+                busqueda_alumnos:{mostrar:false},
+                materias:{mostrar:false},
+                busqueda_materias:{mostrar:false},
+                docentes:{mostrar:false},
+                busqueda_docentes:{mostrar:false},
+                matriculas:{mostrar:false},
+                inscripciones:{mostrar:false}
             }
         }
-    }).mount('#app');
-});
+    },
+    methods:{
+        buscar(ventana, metodo){
+            this.$refs[ventana][metodo]();
+        },
+        abrirVentana(ventana){
+            this.forms[ventana].mostrar = !this.forms[ventana].mostrar;
+        },
+        modificar(ventana, metodo, data){
+            this.$refs[ventana][metodo](data);
+        }
+    },
+    mounted(){
+        db.version(1).stores({
+            "alumnos": "idAlumno, codigo, nombre, direccion, email, telefono"
+        });
+    }
+}).mount("#app");
