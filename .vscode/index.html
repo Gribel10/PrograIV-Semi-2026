@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/bootstrap.min.css"/>
+    <style>
+        body { background-color: #f3e5ff; }
+        .navbar-custom { background: linear-gradient(135deg, #4a0080, #7b2fbf); }
+        .nav-btn { background: #c77dff; color: white; border: none; border-radius: 20px; padding: 5px 18px; font-weight: 500; transition: 0.2s; }
+        .nav-btn:hover, .nav-btn.activo { background: #e0aaff; color: #4a0080; }
+    </style>
+</head>
+<body>
+<div id="app">
+
+    <nav class="navbar-custom px-4 py-2 mb-4 d-flex justify-content-between align-items-center">
+        <span class="text-white fw-bold fs-5">Sistema de Biblioteca</span>
+        <div>
+            <button class="nav-btn me-2" :class="{ activo: vista === 'autores' }" @click="cambiarVista('autores')">Autores</button>
+            <button class="nav-btn" :class="{ activo: vista === 'libros' }" @click="cambiarVista('libros')">Libros</button>
+        </div>
+    </nav>
+
+    <!-- AUTORES -->
+    <div v-if="vista === 'autores'" class="container">
+        <autor :mostrarBusqueda="mostrarBuscarAutor" @toggle-buscar="mostrarBuscarAutor = !mostrarBuscarAutor" ref="rAutor"></autor>
+        <buscarautor v-if="mostrarBuscarAutor" @modificar="seleccionarAutor"></buscarautor>
+    </div>
+
+    <!-- LIBROS -->
+    <div v-if="vista === 'libros'" class="container">
+        <libro :mostrarBusqueda="mostrarBuscarLibro" @toggle-buscar="mostrarBuscarLibro = !mostrarBuscarLibro" ref="rLibro"></libro>
+        <buscarlibro v-if="mostrarBuscarLibro" @modificar="seleccionarLibro"></buscarlibro>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+
+<script>
+// ========================
+// BASE DE DATOS
+// ========================
+const db = new Dexie('db_usss023424_Kelly Ayala'); 
+db.version(1).stores({
+    autores: '++idAutor, codigo, nombre, pais, telefono',
+    libros:  '++idLibro, idAutor, isbn, titulo, editorial, edicion'
+});
+
+// ========================
+// COMPONENTE: AUTORES
+// ========================
+const autor = {
+    props: ['mostrarBusqueda'],
+    data() {
+        return {
+            accion: 'nuevo',
+            idAutor: '', codigo: '', nombre: '', pais: '', telefono: ''
+        }
+    },
+    methods: {
+        toggleBuscar() {
+            this.$emit('toggle-buscar');
+        },
+        limpiarFormulario() {
+            this.accion = 'nuevo';
+            this.idAutor = ''; this.codigo = ''; this.nombre = ''; this.pais = ''; this.telefono = '';
+        },
+        modificarAutor(a) {
+            this.accion = 'modificar';
+            this.idAutor = a.idAutor; this.codigo = a.codigo;
+            this.nombre = a.nombre; this.pais = a.pais; this.telefono = a.telefono;
+        },
+        guardarAutor() {
+            let a = { codigo: this.codigo, nombre: this.nombre, pais: this.pais, telefono: this.telefono };
+            if (this.accion == 'modificar') a.idAutor = this.idAutor;
+            db.autores.put(a).then(() => {
+                alertify.success('Autor guardado correctamente');
+                this.limpiarFormulario();
+            });
+        }
+    },
+    template: `
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-7">
+            <form @submit.prevent="guardarAutor">
+                <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                    <div class="card-header text-white py-3" style="background: linear-gradient(135deg, #4a0080, #7b2fbf);">
+                        <h5 class="mb-0">Registro de Autores</h5>
+                    </div>
+                    <div class="card-body px-4 py-3" style="background-color: #faf7ff;">
+                        <div class="mb-3 row align-items-center">
+                            <label class="col-sm-3 col-form-label fw-semibold" style="color:#6a0dad;">CODIGO</label>
+                            <div class="col-sm-4">
+                                <input required v-model="codigo" type="text" class="form-control rounded-3" style="border:2px solid #9b59b6;" placeholder="Ej: A001">
+                            </div>
+                        </div>
+                        <div class="mb-3 row align-items-center">
+                            <label class="col-sm-3 col-form-label fw-semibold" style="color:#6a0dad;">NOMBRE</label>
+                            <div class="col-sm-7">
+                                <input required pattern="[A-Za-zñÑáéíóú ]{3,150}" v-model="nombre" type="text" class="form-control rounded-3" style="border:2px solid #9b59b6;" placeholder="Nombre completo">
+                            </div>
+                        </div>
+                        <div class="mb-3 row align-items-center">
+                            <label class="col-sm-3 col-form-label fw-semibold" style="color:#6a0dad;">PAIS</label>
+                            <div class="col-sm-7">
+                                <input required v-model="pais" type="text" class="form-control rounded-3" style="border:2px solid #9b59b6;" placeholder="Pais de origen">
+                            </div>
+                        </div>
+                        <div class="mb-3 row align-items-center">
+                            <label class="col-sm-3 col-form-label fw-semibold" style="color:#6a0dad;">TELEFONO</label>
+                            <div class="col-sm-4">
+                                <input v-model="telefono" type="text" class="form-control rounded-3" style="border:2px solid #9b59b6;" placeholder="Opcional">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center py-3" style="background: linear-gradient(135deg, #4a0080, #7b2fbf);">
+                        <button type="submit" class="btn rounded-pill px-4 me-2 fw-semibold" style="background:#e0aaff;color:#4a0080;">Guardar</button>
+                        <button type="button" @click="limpiarFormulario" class="btn rounded-pill px-4 me-2 fw-semibold" style="background:#ffd6ff;color:#4a0080;">Nuevo</button>
+                        <button type="button" @click="toggleBuscar" class="btn rounded-pill px-4 fw-semibold" style="background:#c77dff;color:white;">Buscar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>`
+};
+
+// ========================
+// COMPONENTE: BUSCAR AUTORES
+// ========================
+const buscarautor = {
+    data() {
+        return { buscar: '', buscarTipo: 'nombre', autores: [] }
+    },
+    methods: {
+        modificarAutor(a) { this.$emit('modificar', a); },
+        eliminarAutor(a) {
+            alertify.confirm('Eliminar Autor', '¿Esta seguro de eliminar a ' + a.nombre + '?', () => {
+                db.autores.delete(a.idAutor).then(() => {
+                    this.listarAutores();
+                    alertify.success('Autor ' + a.nombre + ' eliminado');
+                });
+            }, () => {});
+        },
+        async listarAutores() {
+            this.autores = await db.autores.filter(a =>
+                (a[this.buscarTipo] || '').toLowerCase().includes(this.buscar.toLowerCase())
+            ).toArray();
+        }
+    },
+    created() { this.listarAutores(); },
+    template: `
+    <div class="row justify-content-center mt-3">
+        <div class="col-12 col-md-9">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header text-white py-3" style="background: linear-gradient(135deg, #4a0080, #7b2fbf);">
+                    <h5 class="mb-0">Busqueda de Autores</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr style="background-color:#f3e5ff;">
+                                <th class="px-3 py-2" style="color:#6a0dad;">BUSCAR POR</th>
+                                <th class="px-3 py-2">
+                                    <select v-model="buscarTipo" @change="listarAutores" class="form-select form-select-sm rounded-3" style="border:2px solid #9b59b6;">
+                                        <option value="codigo">CODIGO</option>
+                                        <option value="nombre">NOMBRE</option>
+                                        <option value="pais">PAIS</option>
+                                        <option value="telefono">TELEFONO</option>
+                                    </select>
+                                </th>
+                                <th colspan="3" class="px-3 py-2">
+                                    <input type="text" @input="listarAutores" v-model="buscar" class="form-control form-control-sm rounded-3" style="border:2px solid #9b59b6;" placeholder="Escriba para buscar...">
+                                </th>
+                            </tr>
+                            <tr style="background: linear-gradient(135deg, #6a0dad, #9b59b6); color:white;">
+                                <th class="px-3 py-2">CODIGO</th>
+                                <th class="px-3 py-2">NOMBRE</th>
+                                <th class="px-3 py-2">PAIS</th>
+                                <th class="px-3 py-2">TELEFONO</th>
+                                <th class="px-3 py-2 text-center">ACCION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="a in autores" :key="a.idAutor" @click="modificarAutor(a)" style="cursor:pointer;" class="align-middle">
+                                <td class="px-3">{{ a.codigo }}</td>
+                                <td class="px-3">{{ a.nombre }}</td>
+                                <td class="px-3">{{ a.pais }}</td>
+                                <td class="px-3">{{ a.telefono }}</td>
+                                <td class="px-3 text-center">
+                                    <button class="btn btn-sm rounded-pill px-3" style="background:#c0392b;color:white;" @click.stop="eliminarAutor(a)">Eliminar</button>
+                                </td>
+                            </tr>
+                            <tr v-if="autores.length === 0">
+                                <td colspan="5" class="text-center py-3" style="color:#9b59b6;">No se encontraron autores</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>`
+};
+
+// ========================
+// COMPONENTE: LIBROS
+// ========================
+const libro = {
+    props: ['mostrarBusqueda'],
+    data() {
+        return {
+            accion: 'nuevo', autores: [],
+            idLibro: '', idAutor: '', isbn: '', titulo: '', editorial: '', edicion: ''
+        }
+    },
+    methods: {
+        toggleBuscar() {
+            this.$emit('toggle-buscar');
+        },
+        limpiarFormulario() {
+            this.accion = 'nuevo';
+            this.idLibro = ''; this.idAutor = ''; this.isbn = ''; this.titulo = ''; this.editorial = ''; this.edicion = '';
+        },
+        modificarLibro(l) {
+            this.accion = 'modificar';
+            this.idLibro = l.idLibro; this.idAutor = l.idAutor; this.isbn = l.isbn;
+            this.titulo = l.titulo; this.editorial = l.editorial; this.edicion = l.edicion;
+        },
+        guardarLibro() {
+            let l = { idAutor: this.idAutor, isbn: this.isbn, titulo: this.titulo, editorial: this.editorial, edicion: this.edicion };
+            if (this.accion == 'modificar') l.idLibro = this.idLibro;
+            db.libros.put(l).then(() => {
+                alertify.success('Libro guardado correctamente');
+                this.limpiarFormulario();
+            });
+        },
+        cargarAutores() {
+            db.autores.toArray().then(a => this.autores = a);
+        }
+    },
+    created() { this.cargarAutores(); },
+    template: `
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-7">
+            <form @submit.prevent="guardarLibro">
+                <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                    <div class="card-header text-white py-3" style="background: linear-gradient(135deg, #4a0080, #7b2fbf);">
+                        <h5 class="mb-0">Registro de Libros</h5>
+                    </div>
+                    <div class="card-body px-4 py-3" style="background-color:#faf7ff;">
+                        <div class="mb-3 row align-items-center">
+                            <label class="col-sm-3 col-form-label fw-semibold" style="color:#6a0dad;">ISBN</label>
+                            <div class="col-sm-4">
+                                <input required v-model="isbn" type="text" class="form-control rounded-3" style="border:2px solid #9b59b6;" placeholder="Ej: 978-0-00">
+                            </div>
+                        </div>
+                        <div class="mb-3 row align-items-center">
+                            <label class="col-sm-3 col-form-label fw-semibold" style="color:#6a0dad;">TITULO</label>
+                            <div class="col-sm-7">
+                                <input required v-model="titulo" type="text" class="form-control rounded-3" style="border:2px solid #9b59b6;" placeholder="Titulo del libro">
+                            </div>
+                        </div>
+                        <div class="mb-3 row align-items-center">
+                            <label class="col-sm-3 col-form-label fw-semibold" style="color:#6a0dad;">EDITORIAL</label>
+                            <div class="col-sm-7">
+                                <input required v-model="editorial" type="text" class="form-control rounded-3" style="border:2px solid #9b59b6;" placeholder="Editorial">
+                            </div>
+                        </div>
+                        <div class="mb-3 row align-items-center">
+                            <label class="col-sm-3 col-form-label fw-semibold" style="color:#6a0dad;">EDICION</label>
+                            <div class="col-sm-4">
+                                <input required v-model="edicion" type="text" class="form-control rounded-3" style="border:2px solid #9b59b6;" placeholder="Ej: 1ra">
+                            </div>
+                        </div>
+                        <div class="mb-3 row align-items-center">
+                            <label class="col-sm-3 col-form-label fw-semibold" style="color:#6a0dad;">AUTOR</label>
+                            <div class="col-sm-6">
+                                <select required v-model="idAutor" class="form-select rounded-3" style="border:2px solid #9b59b6;">
+                                    <option value="" disabled>Seleccione un autor</option>
+                                    <option v-for="a in autores" :key="a.idAutor" :value="a.idAutor">{{ a.nombre }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center py-3" style="background: linear-gradient(135deg, #4a0080, #7b2fbf);">
+                        <button type="submit" class="btn rounded-pill px-4 me-2 fw-semibold" style="background:#e0aaff;color:#4a0080;">Guardar</button>
+                        <button type="button" @click="limpiarFormulario" class="btn rounded-pill px-4 me-2 fw-semibold" style="background:#ffd6ff;color:#4a0080;">Nuevo</button>
+                        <button type="button" @click="toggleBuscar" class="btn rounded-pill px-4 fw-semibold" style="background:#c77dff;color:white;">Buscar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>`
+};
+
+// ========================
+// COMPONENTE: BUSCAR LIBROS
+// ========================
+const buscarlibro = {
+    data() {
+        return { buscar: '', buscarTipo: 'titulo', libros: [], autores: [] }
+    },
+    methods: {
+        modificarLibro(l) { this.$emit('modificar', l); },
+        eliminarLibro(l) {
+            alertify.confirm('Eliminar Libro', '¿Esta seguro de eliminar ' + l.titulo + '?', () => {
+                db.libros.delete(l.idLibro).then(() => {
+                    this.listarLibros();
+                    alertify.success('Libro ' + l.titulo + ' eliminado');
+                });
+            }, () => {});
+        },
+        async listarLibros() {
+            this.libros = await db.libros.filter(l =>
+                (l[this.buscarTipo] || '').toLowerCase().includes(this.buscar.toLowerCase())
+            ).toArray();
+        },
+        async cargarAutores() {
+            this.autores = await db.autores.toArray();
+        },
+        getNombreAutor(idAutor) {
+            const a = this.autores.find(a => a.idAutor === idAutor);
+            return a ? a.nombre : 'Sin autor';
+        }
+    },
+    created() { this.listarLibros(); this.cargarAutores(); },
+    template: `
+    <div class="row justify-content-center mt-3">
+        <div class="col-12 col-md-10">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header text-white py-3" style="background: linear-gradient(135deg, #4a0080, #7b2fbf);">
+                    <h5 class="mb-0">Busqueda de Libros</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr style="background-color:#f3e5ff;">
+                                <th class="px-3 py-2" style="color:#6a0dad;">BUSCAR POR</th>
+                                <th class="px-3 py-2">
+                                    <select v-model="buscarTipo" @change="listarLibros" class="form-select form-select-sm rounded-3" style="border:2px solid #9b59b6;">
+                                        <option value="isbn">ISBN</option>
+                                        <option value="titulo">TITULO</option>
+                                        <option value="editorial">EDITORIAL</option>
+                                        <option value="edicion">EDICION</option>
+                                    </select>
+                                </th>
+                                <th colspan="4" class="px-3 py-2">
+                                    <input type="text" @input="listarLibros" v-model="buscar" class="form-control form-control-sm rounded-3" style="border:2px solid #9b59b6;" placeholder="Escriba para buscar...">
+                                </th>
+                            </tr>
+                            <tr style="background: linear-gradient(135deg, #6a0dad, #9b59b6); color:white;">
+                                <th class="px-3 py-2">ISBN</th>
+                                <th class="px-3 py-2">TITULO</th>
+                                <th class="px-3 py-2">AUTOR</th>
+                                <th class="px-3 py-2">EDITORIAL</th>
+                                <th class="px-3 py-2">EDICION</th>
+                                <th class="px-3 py-2 text-center">ACCION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="l in libros" :key="l.idLibro" @click="modificarLibro(l)" style="cursor:pointer;" class="align-middle">
+                                <td class="px-3">{{ l.isbn }}</td>
+                                <td class="px-3">{{ l.titulo }}</td>
+                                <td class="px-3">{{ getNombreAutor(l.idAutor) }}</td>
+                                <td class="px-3">{{ l.editorial }}</td>
+                                <td class="px-3">{{ l.edicion }}</td>
+                                <td class="px-3 text-center">
+                                    <button class="btn btn-sm rounded-pill px-3" style="background:#c0392b;color:white;" @click.stop="eliminarLibro(l)">Eliminar</button>
+                                </td>
+                            </tr>
+                            <tr v-if="libros.length === 0">
+                                <td colspan="6" class="text-center py-3" style="color:#9b59b6;">No se encontraron libros</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>`
+};
+
+// ========================
+// APP PRINCIPAL
+// ========================
+const app = Vue.createApp({
+    data() {
+        return {
+            vista: 'autores',
+            mostrarBuscarAutor: false,
+            mostrarBuscarLibro: false
+        }
+    },
+    methods: {
+        cambiarVista(v) {
+            this.vista = v;
+            this.mostrarBuscarAutor = false;
+            this.mostrarBuscarLibro = false;
+        },
+        seleccionarAutor(a) {
+            this.$refs.rAutor.modificarAutor(a);
+            this.mostrarBuscarAutor = false;
+        },
+        seleccionarLibro(l) {
+            this.$refs.rLibro.modificarLibro(l);
+            this.mostrarBuscarLibro = false;
+        }
+    }
+});
+
+app.component('autor', autor);
+app.component('buscarautor', buscarautor);
+app.component('libro', libro);
+app.component('buscarlibro', buscarlibro);
+app.mount('#app');
+</script>
+
+</body>
+</html>
